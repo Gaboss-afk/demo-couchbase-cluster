@@ -1,0 +1,25 @@
+services:
+  couchbase-node1:
+    image: couchbase:latest
+    container_name: couchbase-node1
+    hostname: couchbase-node1.demo.test
+    ports:
+      - "8091-8094:8091-8094"
+      - "11210:11210"
+    networks:
+      couchbase-net:
+        aliases:
+          - couchbase-node1.demo.test
+
+  couchbase-node2:
+    image: couchbase:latest
+    container_name: couchbase-node2
+    hostname: couchbase-node2.demo.test
+    networks:
+      couchbase-net:
+        aliases:
+          - couchbase-node2.demo.test
+
+networks:
+  couchbase-net:
+    driver: bridge
