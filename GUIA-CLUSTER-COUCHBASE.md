@@ -60,7 +60,7 @@ Agregar el servidor lo incorpora a la lista de nodos pendientes. El rebalanceo a
 docker exec couchbase-node1 couchbase-cli rebalance -c 127.0.0.1 -u Admin -p Admin1
 ```
 
-Espera a que termine correctamente.
+Espera a que termine correctamente. docke
 
 ## 7. Verificar el resultado
 
@@ -69,6 +69,22 @@ docker exec couchbase-node1 couchbase-cli server-list -c 127.0.0.1 -u Admin -p A
 ```
 
 La lista debe mostrar dos servidores, incluido `couchbase-node1.demo.test` y `couchbase-node2.demo.test`. También puedes iniciar sesión en <http://localhost:8091> y revisar la sección **Servers**.
+
+## 8. Crear un bucket con una réplica
+
+Cuando el clúster ya tenga los dos nodos activos, crea un bucket Couchbase con una réplica. Para `bucket-create`, las credenciales se indican con `-u` y `-p`:
+
+```powershell
+docker exec couchbase-node1 couchbase-cli bucket-create -c 127.0.0.1 -u Admin -p Admin1 --bucket demo-bucket --bucket-type couchbase --bucket-ramsize 256 --bucket-replica 1
+```
+
+La opción `--bucket-replica 1` solicita una copia de los datos en otro nodo. Confirma que el bucket se creó con:
+
+```powershell
+docker exec couchbase-node1 couchbase-cli bucket-list -c 127.0.0.1 -u Admin -p Admin1
+```
+
+La salida debe incluir `demo-bucket`. También puedes revisar el bucket en <http://localhost:8091>, en la sección **Buckets**. Para demostrar la replicación, inserta documentos en este bucket y consulta su disponibilidad durante la prueba de desconexión de un nodo.
 
 ## Si algo falla
 
