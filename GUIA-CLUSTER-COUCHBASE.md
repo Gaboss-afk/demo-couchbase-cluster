@@ -60,7 +60,7 @@ Agregar el servidor lo incorpora a la lista de nodos pendientes. El rebalanceo a
 docker exec couchbase-node1 couchbase-cli rebalance -c 127.0.0.1 -u Admin -p Admin1
 ```
 
-Espera a que termine correctamente. docke
+Espera a que termine correctamente.
 
 ## 7. Verificar el resultado
 
@@ -85,6 +85,79 @@ docker exec couchbase-node1 couchbase-cli bucket-list -c 127.0.0.1 -u Admin -p A
 ```
 
 La salida debe incluir `demo-bucket`. También puedes revisar el bucket en <http://localhost:8091>, en la sección **Buckets**. Para demostrar la replicación, inserta documentos en este bucket y consulta su disponibilidad durante la prueba de desconexión de un nodo.
+
+## 9. Cargar documentos desde un archivo JSON
+
+El proyecto incluye `data\productos.json` con **1.000 productos** de ejemplo y el script `cargar-datos.ps1`, que los inserta en `demo-bucket` mediante el endpoint de consultas de Couchbase. Asegúrate primero de que el clúster esté activo, el nodo 1 publique el puerto `8093` y el bucket exista. Desde PowerShell, en la carpeta del proyecto, ejecuta:
+
+```powershell
+.\cargar-datos.ps1
+```
+
+El script usa las credenciales de demostración `Admin` / `Admin1` y los valores predeterminados del proyecto. Puedes especificar otros valores sin editar el script:
+
+```powershell
+.\cargar-datos.ps1 -ClusterUrl "http://localhost:8093/query/service" -Bucket "demo-bucket" -Username "Admin" -Password "Admin1"
+```
+
+Cada documento tiene un campo `id`, que el script utiliza como clave del documento en Couchbase. El comando usa `UPSERT`; volverlo a ejecutar actualiza esos mismos documentos en lugar de crear duplicados. Por ello, puedes repetir la ingesta para corregir datos ya cargados. El script informa el avance cada 100 productos. Después, comprueba la cantidad cargada desde **Query** en la interfaz web:
+
+```sql
+CREATE PRIMARY INDEX IF NOT EXISTS ON `demo-bucket`;
+```
+
+Cuando termine la creación del índice, cuenta los productos:
+
+```sql
+SELECT COUNT(*) AS total_productos
+FROM `demo-bucket`
+WHERE tipo = "producto";
+```
+
+El resultado debe ser de al menos `1000`. Para revisar algunos registros, ejecuta:
+
+```sql
+SELECT META(d).id AS id, d.nombre, d.categoria, d.precio, d.stock
+FROM `demo-bucket` AS d
+WHERE d.tipo = "producto";
+```
+
+## 10. Demostración en vivo: desconexión y recuperación
+
+Realiza esta prueba solo con datos de práctica. Mantén el nodo 1 encendido: es el que publica la consola web y el endpoint de consultas en este Compose. Antes de empezar, confirma que ambos nodos estén activos y muestra el total de productos:
+
+```powershell
+docker compose ps
+docker exec couchbase-node1 couchbase-cli server-list -c 127.0.0.1 -u Admin -p Admin1
+```
+
+En **Query**, ejecuta el `COUNT(*)` de la sección anterior y anota el resultado. Luego, desde PowerShell, simula la desconexión del nodo 2:
+
+```powershell
+docker stop couchbase-node2
+docker compose ps
+```
+
+Muestra el estado del clúster en **Servers** y vuelve a intentar la consulta. Couchbase puede no responder por todos los documentos mientras el nodo está fuera, porque algunas particiones activas pueden residir en ese nodo. En un clúster de dos nodos no se debe asumir que el failover será automático; anota el comportamiento que observas, sin forzar el failover durante esta demostración básica.
+
+Para recuperar el nodo, vuelve a iniciarlo:
+
+```powershell
+docker start couchbase-node2
+docker compose ps
+docker exec couchbase-node1 couchbase-cli server-list -c 127.0.0.1 -u Admin -p Admin1
+```
+
+Espera a que el nodo 2 vuelva a aparecer activo y termine su sincronización. Después, ejecuta de nuevo el `COUNT(*)` y confirma que ambos nodos están presentes y los documentos siguen disponibles.
+
+Si el nodo se muestra como activo, **no ejecutes** los comandos de recuperación siguientes. Solo si Couchbase lo marcó como fallido y lo retiró del clúster, puedes solicitar la recuperación incremental y rebalancear:
+
+```powershell
+docker exec couchbase-node1 couchbase-cli recovery -c 127.0.0.1 -u Admin -p Admin1 --server-recovery couchbase-node2.demo.test:8091 --recovery-type delta
+docker exec couchbase-node1 couchbase-cli rebalance -c 127.0.0.1 -u Admin -p Admin1
+```
+
+No uses `--force` ni un failover forzado como parte rutinaria de la exposición: puede producir pérdida de datos o dejar el clúster en un estado que requiera pasos adicionales. Dos nodos son suficientes para demostrar replicación configurada y una interrupción controlada, pero no garantizan failover automático ni disponibilidad continua de todas las particiones. Para demostrar failover automático de forma más sólida, prepara al menos tres nodos.
 
 ## Si algo falla
 
