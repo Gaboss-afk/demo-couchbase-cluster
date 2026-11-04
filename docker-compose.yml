@@ -10,6 +10,8 @@ services:
       couchbase-net:
         aliases:
           - couchbase-node1.demo.test
+    volumes:
+      - couchbase-node1-data:/opt/couchbase/var
 
   couchbase-node2:
     image: couchbase:latest
@@ -19,6 +21,24 @@ services:
       couchbase-net:
         aliases:
           - couchbase-node2.demo.test
+    volumes:
+      - couchbase-node2-data:/opt/couchbase/var
+
+  couchbase-node3:
+    image: couchbase:latest
+    container_name: couchbase-node3
+    hostname: couchbase-node3.demo.test
+    networks:
+      couchbase-net:
+        aliases:
+          - couchbase-node3.demo.test
+    volumes:
+      - couchbase-node3-data:/opt/couchbase/var
+
+volumes:
+  couchbase-node1-data:
+  couchbase-node2-data:
+  couchbase-node3-data:
 
 networks:
   couchbase-net:
