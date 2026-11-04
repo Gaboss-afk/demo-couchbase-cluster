@@ -174,6 +174,8 @@ docker exec couchbase-node1 couchbase-cli server-list -c 127.0.0.1 -u Admin -p A
 
 Cuando el nodo 2 aparezca como `inactiveFailed`, el failover terminó. No ejecutes un failover manual. Vuelve a ejecutar `COUNT(*)` en **Query**: debe devolver al menos `1000`. Ejecuta también la consulta de muestra de la sección anterior; debe mostrar cinco productos. Puede haber errores temporales durante la detección y la conmutación; espera a que el clúster complete el failover y reintenta. La consulta debe ejecutarse contra el nodo 1, que sigue activo.
 
+Para mantener acceso a la consola si se detiene el nodo 1, abre la consola de otro nodo en <http://localhost:18091> (nodo 2) o <http://localhost:28091> (nodo 3). La interfaz no se cambia automáticamente: hay que abrir la URL alternativa.
+
 Para recuperar el nodo, vuelve a iniciarlo:
 
 ```powershell

@@ -17,6 +17,8 @@ services:
     image: couchbase:latest
     container_name: couchbase-node2
     hostname: couchbase-node2.demo.test
+    ports:
+      - "18091-18094:8091-8094"
     networks:
       couchbase-net:
         aliases:
@@ -28,6 +30,8 @@ services:
     image: couchbase:latest
     container_name: couchbase-node3
     hostname: couchbase-node3.demo.test
+    ports:
+      - "28091-28094:8091-8094"
     networks:
       couchbase-net:
         aliases:
